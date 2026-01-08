@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+sqlmodel
+aiosqlite
+google-generativeai
+python-multipart
+python-dotenv
+pandas
+numpy
+pillow
+httpx
+jinja2
+pydantic-settings

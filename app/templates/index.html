@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retail AI | Intelligent Dashboard</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Premium Styles -->
+    <link rel="stylesheet" href="/static/premium.css">
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="logo-container">
+            <i data-lucide="zap" style="color: #818cf8;"></i>
+            <h2>RetailAI</h2>
+        </div>
+        <nav>
+            <ul class="nav-links">
+                <li class="nav-item">
+                    <a class="nav-link active" data-view="catalog">
+                        <i data-lucide="layout-grid"></i>
+                        <span>Catalog</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-view="generate">
+                        <i data-lucide="sparkles"></i>
+                        <span>AI Generator</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-view="validate">
+                        <i data-lucide="check-circle-2"></i>
+                        <span>Validator</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-view="intelligence">
+                        <i data-lucide="trending-up"></i>
+                        <span>Intelligence</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header>
+            <div>
+                <h1 id="view-title">Product Catalog</h1>
+                <p id="view-subtitle" style="color: var(--text-muted);">Manage and optimize your store inventory.</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn-premium" onclick="switchView('generate')">
+                    <i data-lucide="plus"></i> New Listing
+                </button>
+            </div>
+        </header>
+
+        <!-- Catalog View -->
+        <section id="catalog-view" class="view-section active">
+            <div class="dashboard-grid" id="product-list">
+                <!-- Products will be injected here -->
+                <div class="glass-card" style="grid-column: 1/-1; text-align: center; padding: 4rem;">
+                    <i data-lucide="loader-2" class="animate-spin mb-4"
+                        style="width: 48px; height: 48px; opacity: 0.5;"></i>
+                    <p>Fetching your listings...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Generate View -->
+        <section id="generate-view" class="view-section">
+            <div class="glass-card">
+                <div style="display: flex; gap: 2rem;">
+                    <div style="flex: 1;">
+                        <h3 class="mb-4">Create Optimized Listing</h3>
+                        <form id="generateForm">
+                            <div class="form-group">
+                                <label>Product Name</label>
+                                <input type="text" id="prodName" placeholder="e.g. Wireless Ergonomic Mouse" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Key Features / Raw Description</label>
+                                <textarea id="prodDesc" rows="5"
+                                    placeholder="List key features, specs, or a rough description..."
+                                    required></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>Product Image</label>
+                                <input type="file" id="prodImage" accept="image/*">
+                            </div>
+                            <button type="submit" class="btn-premium w-100">
+                                <i data-lucide="wand-2"></i> Generate AI Listing
+                            </button>
+                        </form>
+                    </div>
+                    <div id="ai-output"
+                        style="flex: 1.2; border-left: 1px solid var(--glass-border); padding-left: 2rem; display: none;">
+                        <div id="generateResult"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Validate View -->
+        <section id="validate-view" class="view-section">
+            <div class="glass-card">
+                <div style="display: flex; gap: 2rem;">
+                    <div style="flex: 1;">
+                        <h3>Listing Quality Check</h3>
+                        <p class="mb-4" style="color: var(--text-muted);">Validate your listing against SEO standards.
+                        </p>
+                        <form id="validateForm">
+                            <div class="form-group">
+                                <label>Listing Title</label>
+                                <input type="text" id="valTitle" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Listing Description</label>
+                                <textarea id="valDesc" rows="6" required></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>Main Image</label>
+                                <input type="file" id="valImage" required>
+                            </div>
+                            <button type="submit" class="btn-premium">
+                                <i data-lucide="shield-check"></i> Run Validation
+                            </button>
+                        </form>
+                    </div>
+                    <div id="validation-output"
+                        style="flex: 1; border-left: 1px solid var(--glass-border); padding-left: 2rem; display: none;">
+                        <div id="validateResult"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Intelligence View -->
+        <section id="intelligence-view" class="view-section">
+            <div class="glass-card">
+                <div class="mb-4 d-flex justify-between align-center">
+                    <div>
+                        <h3>Retail Intelligence</h3>
+                        <p style="color: var(--text-muted);">Anomaly detection and sales optimization.</p>
+                    </div>
+                    <div style="display: flex; gap: 1rem; align-items: center;">
+                        <input type="number" id="prodId" placeholder="Product ID" style="width: 150px;">
+                        <button class="btn-premium" id="btnCheckAnomalies">
+                            <i data-lucide="search"></i> Analyze
+                        </button>
+                    </div>
+                </div>
+                <div id="intelligenceResult">
+                    <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
+                        <i data-lucide="bar-chart-3"
+                            style="width: 48px; height: 48px; margin-bottom: 1rem; opacity: 0.3;"></i>
+                        <p>Enter a Product ID to see intelligence reports.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="/static/dashboard.js"></script>
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+    </script>
+</body>
+
+</html>
