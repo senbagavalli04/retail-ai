@@ -39,7 +39,7 @@ class IntelligenceService:
             "statistics": {"mean": mean, "std": std}
         }
 
-    def generate_recommendations(self, anomalies, listing_score):
+    def generate_recommendations(self, anomalies):
         recommendations = []
         
         # Sales drop recommendations
@@ -48,8 +48,9 @@ class IntelligenceService:
             recommendations.append("Sales Drop Detected: Check for negative reviews or stock issues.")
             recommendations.append("Consider running a promotion to regain momentum.")
 
-        # Low listing score recommendations
-        if listing_score < 80:
-            recommendations.append("Listing Health Low: Improve main image quality and optimize title keywords.")
+        # Sales spike recommendations
+        spikes = [a for a in anomalies if a['type'] == 'spike']
+        if spikes:
+            recommendations.append("Sales Spike Detected: Ensure stock levels are sufficient for continued demand.")
             
         return recommendations

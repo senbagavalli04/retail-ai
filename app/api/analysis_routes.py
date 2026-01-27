@@ -37,13 +37,10 @@ async def get_anomalies(product_id: int, session: Session = Depends(get_session)
     
     anomalies = intelligence.detect_sales_anomalies(sales)
     
-    # Fetch listing for checking score (mocking listing check if not found)
-    listing = session.get(Listing, product_id)
-    listing_score = listing.health_score if listing else 70
-    
+    # Generate recommendations based on anomalies
     recs = []
     if "anomalies" in anomalies:
-        recs = intelligence.generate_recommendations(anomalies["anomalies"], listing_score)
+        recs = intelligence.generate_recommendations(anomalies["anomalies"])
         
     return {
         "anomalies_data": anomalies,

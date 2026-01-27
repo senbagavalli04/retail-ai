@@ -98,6 +98,7 @@
                             <div class="form-group">
                                 <label>Product Image</label>
                                 <input type="file" id="prodImage" accept="image/*">
+                                <div id="prodImagePreview" class="image-preview-container"></div>
                             </div>
                             <button type="submit" class="btn-premium w-100">
                                 <i data-lucide="wand-2"></i> Generate AI Listing
@@ -132,6 +133,7 @@
                             <div class="form-group">
                                 <label>Main Image</label>
                                 <input type="file" id="valImage" required>
+                                <div id="valImagePreview" class="image-preview-container"></div>
                             </div>
                             <button type="submit" class="btn-premium">
                                 <i data-lucide="shield-check"></i> Run Validation
@@ -161,6 +163,28 @@
                         </button>
                     </div>
                 </div>
+
+                <!-- Sales Ingestion Tool -->
+                <div
+                    style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; border: 1px dashed var(--glass-border);">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h5 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                            <i data-lucide="upload-cloud" style="width: 18px; color: var(--primary-color);"></i>
+                            Import Sales History
+                        </h5>
+                        <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0;">Required columns:
+                            <code>product_id</code>, <code>units_sold</code>, <code>date</code></p>
+                    </div>
+                    <form id="salesIngestForm" style="display: flex; gap: 1rem;">
+                        <input type="file" id="salesCsv" accept=".csv" required style="flex: 1;">
+                        <button type="submit" class="btn-premium" style="padding: 0.5rem 1.5rem;">
+                            <i data-lucide="file-up"></i> Ingest CSV
+                        </button>
+                    </form>
+                    <div id="ingestStatus" style="margin-top: 1rem; font-size: 0.85rem; display: none;"></div>
+                </div>
+
                 <div id="intelligenceResult">
                     <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
                         <i data-lucide="bar-chart-3"
