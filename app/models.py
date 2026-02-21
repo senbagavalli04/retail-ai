@@ -4,6 +4,7 @@ from datetime import datetime
 
 class ProductBase(SQLModel):
     name: str = Field(index=True)
+    sku: Optional[str] = Field(default=None, index=True)
     description: Optional[str] = None
     price: float
     category: Optional[str] = None
@@ -11,8 +12,8 @@ class ProductBase(SQLModel):
 
 class Product(ProductBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    listings: List["Listing"] = Relationship(back_populates="product")
-    sales: List["SalesData"] = Relationship(back_populates="product")
+    listings: List["Listing"] = Relationship(back_populates="product", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
+    sales: List["SalesData"] = Relationship(back_populates="product", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
 
 class ListingBase(SQLModel):
     title: str

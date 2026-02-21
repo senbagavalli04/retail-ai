@@ -17,6 +17,12 @@ function switchView(viewId) {
         section.classList.toggle('active', section.id === `${viewId}-view`);
     });
 
+    // Toggle Clear All button visibility
+    const clearBtn = document.getElementById('btnClearAll');
+    if (clearBtn) {
+        clearBtn.style.display = viewId === 'catalog' ? 'flex' : 'none';
+    }
+
     // Update header text
     const viewData = views[viewId];
     if (viewData) {
@@ -31,6 +37,39 @@ function switchView(viewId) {
 
     // Re-initialize icons for newly shown content
     lucide.createIcons();
+}
+
+async function deleteProduct(productId) {
+    if (!confirm('Are you sure you want to delete this product? This will also remove its listings and sales history.')) return;
+
+    try {
+        const response = await fetch(`/api/v1/products/${productId}`, { method: 'DELETE' });
+        const result = await response.json();
+        if (result.success) {
+            fetchProducts();
+        } else {
+            alert('Error: ' + result.message);
+        }
+    } catch (err) {
+        alert('Failed to delete product: ' + err.message);
+    }
+}
+
+async function clearAllData() {
+    if (!confirm('WARNING: This will delete ALL products, sales data, and listings. This action cannot be undone. Proceed?')) return;
+
+    try {
+        const response = await fetch('/api/v1/products/clear/all', { method: 'DELETE' });
+        const result = await response.json();
+        if (result.success) {
+            alert('Database cleared successfully.');
+            fetchProducts();
+        } else {
+            alert('Error: ' + result.message);
+        }
+    } catch (err) {
+        alert('Failed to clear database: ' + err.message);
+    }
 }
 
 // Navigation Event Listeners
@@ -60,7 +99,12 @@ async function fetchProducts() {
                 <div class="glass-card listing-card">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
                         <span class="status-badge status-success">Active</span>
-                        <div style="color: var(--text-muted); font-size: 0.8rem;">ID: ${p.id}</div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <div style="color: var(--text-muted); font-size: 0.8rem;">ID: ${p.id}</div>
+                            <button class="btn-icon-danger" onclick="deleteProduct(${p.id})" title="Delete Product" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 0; display: flex;">
+                                <i data-lucide="trash" style="width: 14px; height: 14px;"></i>
+                            </button>
+                        </div>
                     </div>
                     <h4 style="margin-bottom: 0.5rem;">${p.name}</h4>
                     <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
@@ -286,7 +330,16 @@ document.getElementById('btnCheckAnomalies').addEventListener('click', async () 
         const response = await fetch(`/api/v1/intelligence/anomalies/${prodId}`);
         const data = await response.json();
 
-        if (data.anomalies_data.status === "insufficient_data") {
+        if (data.anomalies_data.status === "product_not_found") {
+            anomaliesHtml = `
+                <div style="background: rgba(239, 68, 68, 0.1); border-radius: 12px; padding: 2rem; border: 1px solid rgba(239, 68, 68, 0.2);">
+                    <h5 style="color: #ef4444; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <i data-lucide="alert-circle" style="width: 18px;"></i> Product Not Found
+                    </h5>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">No product matches the ID or SKU provided. Ensure you've imported your catalog or sales history first.</p>
+                </div>
+            `;
+        } else if (data.anomalies_data.status === "insufficient_data") {
             anomaliesHtml = `
                 <div style="background: rgba(245, 158, 11, 0.1); border-radius: 12px; padding: 2rem; border: 1px solid rgba(245, 158, 11, 0.2);">
                     <h5 style="color: #f59e0b; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
@@ -418,7 +471,7 @@ function setupImagePreview(inputId, previewId) {
 
 // Initial Load
 function init() {
-    fetchProducts();
+    switchView('catalog'); // This handles fetchProducts AND the Clear All button visibility
     setupImagePreview('prodImage', 'prodImagePreview');
     setupImagePreview('valImage', 'valImagePreview');
 }

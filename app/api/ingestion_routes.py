@@ -24,3 +24,23 @@ async def get_all_products(session: Session = Depends(get_session)):
     statement = select(Product)
     results = session.exec(statement).all()
     return results
+
+@router.delete("/products/{product_id}")
+async def delete_product(product_id: int, session: Session = Depends(get_session)):
+    product = session.get(Product, product_id)
+    if not product:
+        return {"success": False, "message": "Product not found"}
+    session.delete(product)
+    session.commit()
+    return {"success": True, "message": f"Product {product_id} deleted"}
+
+@router.delete("/products/clear/all")
+async def clear_all_products(session: Session = Depends(get_session)):
+    from sqlmodel import delete
+    # Delete all listings first if they exist
+    from app.models import Listing, SalesData
+    session.exec(delete(Listing))
+    session.exec(delete(SalesData))
+    session.exec(delete(Product))
+    session.commit()
+    return {"success": True, "message": "All data cleared successfully"}

@@ -9,44 +9,126 @@ class IngestionService:
     def __init__(self, session: Session):
         self.session = session
 
+    def _map_columns(self, columns):
+        """Helper to find matching columns based on common retail keywords with scoring."""
+        mapping = {}
+        schema = {
+            "sku": ["product id", "product_id", "stockcode", "sku", "item_id", "article", "id", "code"],
+            "date": ["order date", "order_date", "invoicedate", "transaction date", "date", "time", "timestamp"],
+            "qty": ["quantity", "qty", "units_sold", "number items", "units", "count", "sold"],
+            "unit_price": ["unitprice", "unit price", "price per item", "rate", "cost per"],
+            "total_revenue": ["sales", "revenue", "total price", "total", "amount", "profit"],
+            "name": ["product name", "product_name", "description", "item_name", "name", "title", "label"]
+        }
+        
+        lowered_cols = [c.lower().replace("_", " ").replace("-", " ").strip() for c in columns]
+        
+        for key, keywords in schema.items():
+            best_match = None
+            best_score = -1
+            
+            for i, col in enumerate(lowered_cols):
+                for kw in keywords:
+                    score = -1
+                    if col == kw:
+                        score = 10  # Perfect match
+                    elif f" {kw} " in f" {col} ":
+                        score = 8   # Word match
+                    elif col.startswith(kw) and len(kw) > 4:
+                        score = 5   # Significant prefix
+                    elif col.endswith(kw) and len(kw) > 4:
+                        score = 5   # Significant suffix
+                        
+                    if score > best_score:
+                        best_score = score
+                        best_match = columns[i]
+            
+            if best_match:
+                mapping[key] = best_match
+        return mapping
+
     async def ingest_csv(self, file: UploadFile):
         content = await file.read()
-        df = pd.read_csv(io.BytesIO(content))
+        try:
+            df = pd.read_csv(io.BytesIO(content))
+        except Exception as e:
+            # Try with different encoding if standard fails
+            df = pd.read_csv(io.BytesIO(content), encoding='latin1')
+
+        results = {"success": 0, "errors": 0, "type": "flexible_retail"}
+        mapping = self._map_columns(df.columns)
         
-        results = {"success": 0, "errors": 0, "type": "unknown"}
+        # Check if we have the bare minimum for intelligence (Date, Qty, and some Identifier)
+        if not all(k in mapping for k in ["date", "qty", "sku"]):
+            return {"success": 0, "errors": 0, "type": "error", "message": f"Required columns (Date, Qty, SKU) missing. Found: {list(mapping.keys())}"}
+
+        product_cache = {} # Map mapped SKU/StockCode to Database Product ID
         
-        # Determine CSV Type
-        columns = [c.lower() for c in df.columns]
-        if "units_sold" in columns and "product_id" in columns:
-            results["type"] = "sales"
-            for _, row in df.iterrows():
+        for idx, row in df.iterrows():
+            try:
+                # 1. Clean and Parse SKU
+                raw_sku = str(row.get(mapping["sku"], "")).strip()
+                if not raw_sku or raw_sku.lower() == "nan":
+                    continue
+
+                # 2. Clean and Parse Quantity
+                qty_val = str(row.get(mapping["qty"], 0)).replace(",", "")
+                raw_qty = int(float(qty_val))
+                
+                # Ignore returns/negative quantities
+                if raw_qty <= 0:
+                    continue
+
+                # 3. Clean and Parse Date
+                date_val = str(row.get(mapping["date"]))
                 try:
-                    sales_entry = SalesData(
-                        product_id=int(row.get("product_id")),
-                        units_sold=int(row.get("units_sold")),
-                        revenue=float(row.get("revenue", 0)),
-                        date=pd.to_datetime(row.get("date", datetime.now())).to_pydatetime()
-                    )
-                    self.session.add(sales_entry)
-                    results["success"] += 1
-                except Exception as e:
-                    results["errors"] += 1
-                    print(f"Error ingesting sales row: {e}")
-        else:
-            results["type"] = "products"
-            for _, row in df.iterrows():
-                try:
-                    product = Product(
-                        name=row.get("name"),
-                        description=row.get("description"),
-                        price=float(row.get("price", 0)),
-                        category=row.get("category")
-                    )
-                    self.session.add(product)
-                    results["success"] += 1
-                except Exception as e:
-                    results["errors"] += 1
-                    print(f"Error ingesting product row: {e}")
+                    raw_date = pd.to_datetime(date_val, dayfirst=True).to_pydatetime()
+                except:
+                    raw_date = pd.to_datetime(date_val).to_pydatetime()
+                
+                # 4. Clean and Parse Revenue/Price
+                rev_val = 0.0
+                if "unit_price" in mapping:
+                    up = float(str(row.get(mapping["unit_price"], 0)).replace(",", "").replace("$", ""))
+                    rev_val = raw_qty * up
+                elif "total_revenue" in mapping:
+                    rev_val = float(str(row.get(mapping["total_revenue"], 0)).replace(",", "").replace("$", ""))
+                
+                # 5. Optional Name
+                raw_name = str(row.get(mapping.get("name"), "Product " + raw_sku)).strip()
+
+                # 6. Ensure product exists in database
+                if raw_sku not in product_cache:
+                    from sqlmodel import select
+                    existing_prod = self.session.exec(select(Product).where(Product.sku == raw_sku)).first()
+                    if not existing_prod:
+                        new_prod = Product(
+                            name=raw_name, 
+                            sku=raw_sku, 
+                            description=f"Auto-imported. SKU: {raw_sku}", 
+                            price=rev_val / raw_qty if raw_qty > 0 else 0
+                        )
+                        self.session.add(new_prod)
+                        self.session.flush()
+                        product_cache[raw_sku] = new_prod.id
+                    else:
+                        product_cache[raw_sku] = existing_prod.id
+                
+                # 7. Create Sales Entry
+                sales_entry = SalesData(
+                    product_id=product_cache[raw_sku],
+                    units_sold=raw_qty,
+                    revenue=rev_val,
+                    date=raw_date
+                )
+                self.session.add(sales_entry)
+                results["success"] += 1
+
+            except Exception as e:
+                if results["errors"] < 5: # Log first few errors for debugging
+                    print(f"Error at row {idx}: {e}")
+                results["errors"] += 1
+                continue
         
         self.session.commit()
         return results

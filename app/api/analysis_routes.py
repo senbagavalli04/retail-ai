@@ -28,11 +28,35 @@ async def validate_listing(
     }
 
 @router.get("/intelligence/anomalies/{product_id}")
-async def get_anomalies(product_id: int, session: Session = Depends(get_session)):
+async def get_anomalies(product_id: str, session: Session = Depends(get_session)):
     intelligence = IntelligenceService()
     
-    # Fetch sales data
-    statement = select(SalesData).where(SalesData.product_id == product_id).order_by(SalesData.date)
+    # Try to find by ID first, then by SKU
+    target_id = None
+    from app.models import Product
+    
+    # 1. Try treating it as an internal integer ID
+    try:
+        int_id = int(product_id)
+        statement = select(Product).where(Product.id == int_id)
+        product = session.exec(statement).first()
+        if product:
+            target_id = product.id
+    except ValueError:
+        pass
+        
+    # 2. If not found by ID or alphanumeric, try searching by SKU (StockCode)
+    if not target_id:
+        statement = select(Product).where(Product.sku == product_id)
+        product = session.exec(statement).first()
+        if product:
+            target_id = product.id
+            
+    if not target_id:
+        return {"anomalies_data": {"status": "product_not_found"}, "recommendations": []}
+
+    # Fetch sales data for the internal ID
+    statement = select(SalesData).where(SalesData.product_id == target_id).order_by(SalesData.date)
     sales = session.exec(statement).all()
     
     anomalies = intelligence.detect_sales_anomalies(sales)

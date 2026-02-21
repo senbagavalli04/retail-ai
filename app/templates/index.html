@@ -59,7 +59,12 @@
                 <h1 id="view-title">Product Catalog</h1>
                 <p id="view-subtitle" style="color: var(--text-muted);">Manage and optimize your store inventory.</p>
             </div>
-            <div class="header-actions">
+            <div class="header-actions" style="display: flex; gap: 0.5rem;">
+                <button class="btn-premium btn-danger" id="btnClearAll"
+                    style="display: none; background: rgba(239, 68, 68, 0.2); color: #ef4444; border-color: rgba(239, 68, 68, 0.3);"
+                    onclick="clearAllData()">
+                    <i data-lucide="trash-2" style="width: 16px;"></i> Clear Data
+                </button>
                 <button class="btn-premium" onclick="switchView('generate')">
                     <i data-lucide="plus"></i> New Listing
                 </button>
@@ -157,7 +162,7 @@
                         <p style="color: var(--text-muted);">Anomaly detection and sales optimization.</p>
                     </div>
                     <div style="display: flex; gap: 1rem; align-items: center;">
-                        <input type="number" id="prodId" placeholder="Product ID" style="width: 150px;">
+                        <input type="text" id="prodId" placeholder="Product ID / SKU" style="width: 150px;">
                         <button class="btn-premium" id="btnCheckAnomalies">
                             <i data-lucide="search"></i> Analyze
                         </button>
@@ -173,8 +178,9 @@
                             <i data-lucide="upload-cloud" style="width: 18px; color: var(--primary-color);"></i>
                             Import Sales History
                         </h5>
-                        <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0;">Required columns:
-                            <code>product_id</code>, <code>units_sold</code>, <code>date</code></p>
+                        <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0;">Supports internal format or
+                            <b> Online Retail</b> (StockCode, Description, UnitPrice, Quantity, InvoiceDate)
+                        </p>
                     </div>
                     <form id="salesIngestForm" style="display: flex; gap: 1rem;">
                         <input type="file" id="salesCsv" accept=".csv" required style="flex: 1;">
