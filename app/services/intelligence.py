@@ -45,12 +45,31 @@ class IntelligenceService:
         # Sales drop recommendations
         drops = [a for a in anomalies if a['type'] == 'drop']
         if drops:
-            recommendations.append("Sales Drop Detected: Check for negative reviews or stock issues.")
-            recommendations.append("Consider running a promotion to regain momentum.")
+            recommendations.append("Low Demand Alert: We detected an unexpected dip in sales. Check for stock issues or recent negative feedback.")
+            recommendations.append("Action Item: Consider a temporary promotion or check if pricing is competitive compared to others.")
 
         # Sales spike recommendations
         spikes = [a for a in anomalies if a['type'] == 'spike']
         if spikes:
-            recommendations.append("Sales Spike Detected: Ensure stock levels are sufficient for continued demand.")
+            recommendations.append("High Demand Alert: Sales surged unexpectedly! Ensure your stock levels can handle this increased volume.")
             
         return recommendations
+    
+    def get_sales_context_summary(self, anomalies):
+        """
+        Converts detected anomalies into a text summary for the AI Listing Agent.
+        """
+        if not anomalies or anomalies.get("status") == "insufficient_data":
+            return None
+        
+        events = anomalies.get("anomalies", [])
+        if not events:
+            return "Stable sales performance observed."
+        
+        summary = "Historical Sales Performance Analysis:\n"
+        for e in events:
+            date_str = e['date'].strftime('%Y-%m-%d')
+            type_label = "Sale Surge" if e['type'] == 'spike' else "Low Demand Dip"
+            summary += f"- {date_str}: {type_label} with {e['value']} units sold.\n"
+        
+        return summary

@@ -36,3 +36,13 @@ class SalesData(SalesDataBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     product_id: Optional[int] = Field(default=None, foreign_key="product.id")
     product: Optional[Product] = Relationship(back_populates="sales")
+
+class HeaderMapping(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    format_name: str = Field(index=True, unique=True)
+    sku_col: str
+    date_col: str
+    qty_col: str
+    price_col: str
+    name_col: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)

@@ -2,7 +2,7 @@ from fastapi import APIRouter, UploadFile, File, Depends
 from app.database import get_session
 from sqlmodel import Session
 from app.services.ingestion import IngestionService
-from app.models import Product
+from app.models import Product, HeaderMapping
 
 router = APIRouter()
 
@@ -44,3 +44,26 @@ async def clear_all_products(session: Session = Depends(get_session)):
     session.exec(delete(Product))
     session.commit()
     return {"success": True, "message": "All data cleared successfully"}
+
+@router.post("/config/mappings")
+async def create_mapping(mapping: HeaderMapping, session: Session = Depends(get_session)):
+    session.add(mapping)
+    session.commit()
+    session.refresh(mapping)
+    return mapping
+
+@router.get("/config/mappings")
+async def get_mappings(session: Session = Depends(get_session)):
+    from sqlmodel import select
+    return session.exec(select(HeaderMapping)).all()
+
+@router.post("/config/analyze-headers")
+async def analyze_headers(data: dict, session: Session = Depends(get_session)):
+    raw_header = data.get("header", "")
+    # Simple split by comma, semicolon or tab
+    import re
+    cols = [c.strip() for c in re.split(r'[,;\t]', raw_header) if c.strip()]
+    
+    service = IngestionService(session)
+    mapping = service._map_columns(cols)
+    return mapping

@@ -1,6 +1,6 @@
 from fastapi import UploadFile
-from app.models import Product, Listing, SalesData
-from sqlmodel import Session
+from app.models import Product, Listing, SalesData, HeaderMapping
+from sqlmodel import Session, select
 import pandas as pd
 import io
 from datetime import datetime
@@ -16,8 +16,8 @@ class IngestionService:
             "sku": ["product id", "product_id", "stockcode", "sku", "item_id", "article", "id", "code"],
             "date": ["order date", "order_date", "invoicedate", "transaction date", "date", "time", "timestamp"],
             "qty": ["quantity", "qty", "units_sold", "number items", "units", "count", "sold"],
-            "unit_price": ["unitprice", "unit price", "price per item", "rate", "cost per"],
-            "total_revenue": ["sales", "revenue", "total price", "total", "amount", "profit"],
+            "unit_price": ["unitprice", "unit price", "price per item", "rate", "cost per", "sales", "revenue", "price"],
+            "total_revenue": ["sales", "revenue", "total price", "total", "amount", "profit", "net sales"],
             "name": ["product name", "product_name", "description", "item_name", "name", "title", "label"]
         }
         
@@ -56,7 +56,33 @@ class IngestionService:
             df = pd.read_csv(io.BytesIO(content), encoding='latin1')
 
         results = {"success": 0, "errors": 0, "type": "flexible_retail"}
-        mapping = self._map_columns(df.columns)
+        
+        # 1. Try to find an exactly matching custom mapping from DB
+        mapping = {}
+        custom_mappings = self.session.exec(select(HeaderMapping)).all()
+        csv_cols = set(df.columns)
+        
+        selected_custom = None
+        for cm in custom_mappings:
+            required = {cm.sku_col, cm.date_col, cm.qty_col, cm.price_col}
+            if cm.name_col: required.add(cm.name_col)
+            
+            if required.issubset(csv_cols):
+                selected_custom = cm
+                break
+        
+        if selected_custom:
+            mapping = {
+                "sku": selected_custom.sku_col,
+                "date": selected_custom.date_col,
+                "qty": selected_custom.qty_col,
+                "unit_price": selected_custom.price_col,
+                "name": selected_custom.name_col
+            }
+            results["type"] = f"custom_{selected_custom.format_name}"
+        else:
+            # Fallback to heuristic mapping
+            mapping = self._map_columns(df.columns)
         
         # Check if we have the bare minimum for intelligence (Date, Qty, and some Identifier)
         if not all(k in mapping for k in ["date", "qty", "sku"]):
@@ -99,7 +125,6 @@ class IngestionService:
 
                 # 6. Ensure product exists in database
                 if raw_sku not in product_cache:
-                    from sqlmodel import select
                     existing_prod = self.session.exec(select(Product).where(Product.sku == raw_sku)).first()
                     if not existing_prod:
                         new_prod = Product(

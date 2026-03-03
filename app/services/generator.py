@@ -16,29 +16,28 @@ class ListingAgent:
             self.model = None
             print("WARNING: Gemini API Key not found. ListingAgent will run in 'Market Intelligence Mock Mode'.")
 
-    async def generate_listing_content(self, product_name: str, basic_description: str, image_bytes: bytes = None):
+    async def generate_listing_content(self, product_name: str, basic_description: str, image_bytes: bytes = None, sales_context: str = None):
         """
         The main agent workflow: orchestrates research and generation.
         """
         if not self.model:
-            return self._generate_premium_mock(product_name, basic_description)
+            return self._generate_premium_mock(product_name, basic_description, sales_context=sales_context)
 
         # Stage 1: Market Research & Persona Definition
         research_prompt = f"""
         Act as a Retail Research Analyst. Analyze the following product:
         Product: {product_name}
         Initial Specs: {basic_description}
+        {f"Sales Context: {sales_context}" if sales_context else ""}
         
         Identify:
         1. Primary Target Audience.
         2. Top 3 Selling Points (Benefits, not just features).
-        3. Tone of voice (e.g., Professional, Trendy, Minimalist).
-        4. High-value SEO keywords for this category.
-        
-        Return a concise JSON object with these fields.
+        3. Tone of voice.
+        4. High-value SEO keywords.
         """
         
-        # Stage 2: Content Generation with Refinement
+        # Stage 2: Content Generation with Sales-Aware Refinement
         main_prompt = f"""
         You are an Expert E-commerce Copywriter and SEO Specialist. 
         Your task is to create a PREMIER product listing for: {product_name}.
@@ -46,12 +45,15 @@ class ListingAgent:
         CONTEXT:
         {basic_description}
         
+        {"SALES PERFORMANCE HISTORY:" + sales_context if sales_context else ""}
+        
         INSTRUCTIONS:
-        1. **Title**: SEO-optimized, includes brand/type/key-feature (max 150 chars).
-        2. **Description**: Persuasive, benefit-driven story (2-3 paragraphs). Focus on solving customer problems.
-        3. **Bullet Points**: 5 high-impact bullet points. Use the 'Feature: Benefit' format.
+        1. **Title**: SEO-optimized (max 150 chars).
+        2. **Description**: Persuasive, benefit-driven story. 
+           { "IMPORTANT: Analyze the Sales Performance History provided. Identify what worked during surges and what failed during drops. Optimize this new description to double down on high-performance elements." if sales_context else "" }
+        3. **Bullet Points**: 5 high-impact bullet points.
         4. **Keywords**: 12 high-intent SEO keywords.
-        5. **Persona**: Specify the tone used (e.g. 'Luxury Tech', 'Friendly Budget-Conscious', 'Professional B2B').
+        5. **Persona**: Specify the tone used.
         
         Format the final output as a valid JSON object.
         """
@@ -82,7 +84,7 @@ class ListingAgent:
             print(f"ListingAgent Error: {e}")
             return self._generate_premium_mock(product_name, basic_description, error=str(e))
 
-    def _generate_premium_mock(self, name: str, desc: str, error: str = None):
+    def _generate_premium_mock(self, name: str, desc: str, error: str = None, sales_context: str = None):
         """
         Provides high-quality, category-aware mock data when the live model is unavailable.
         """
@@ -95,7 +97,8 @@ class ListingAgent:
 
         base_data = {
             "title": f"Ultimate {name} | Professional Grade & Eco-Friendly Design",
-            "description": f"The {name} is the perfect solution for those seeking quality and performance. {desc}. Crafted with premium materials, it ensures durability while maintaining a sleek, modern aesthetic that fits into Any lifestyle.",
+            "description": f"The {name} is the perfect solution for those seeking quality and performance. {desc}. " + 
+                           (f"Based on your sales trends ({sales_context}), we've optimized this copy to prevent features associated with past drops." if sales_context else "Crafted with premium materials, it ensures durability while maintaining a sleek, modern aesthetic."),
             "bullets": [
                 f"Advanced Performance: Optimized {name} technology for superior results.",
                 "Sustainable Build: Made with eco-conscious materials for a greener planet.",

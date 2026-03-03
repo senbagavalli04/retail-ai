@@ -5,17 +5,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Retail AI | Intelligent Dashboard</title>
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23818cf8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polygon points='13 2 3 14 12 14 11 22 21 10 12 10 13 2'></polygon></svg>">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <!-- Premium Styles -->
     <link rel="stylesheet" href="/static/premium.css">
 </head>
 
 <body>
+    <!-- Landing Page Overlay -->
+    <div id="landing-page" class="landing-page">
+        <div class="landing-content">
+            <div class="landing-logo">
+                <i data-lucide="zap"></i>
+                <h1>RetailAI</h1>
+            </div>
+            <p class="landing-title">
+                Experience the future of commerce with<br>
+                <b>Next-Gen Retail Management Intelligence</b>
+            </p>
+            <button class="btn-start" onclick="enterApp()">
+                Get Started
+            </button>
+        </div>
+    </div>
     <!-- Sidebar -->
     <aside class="sidebar">
         <div class="logo-container">
@@ -34,12 +52,6 @@
                     <a class="nav-link" data-view="generate">
                         <i data-lucide="sparkles"></i>
                         <span>AI Generator</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" data-view="validate">
-                        <i data-lucide="check-circle-2"></i>
-                        <span>Validator</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -100,58 +112,40 @@
                                     placeholder="List key features, specs, or a rough description..."
                                     required></textarea>
                             </div>
+                            <div style="display: flex; gap: 1rem;">
+                                <div class="form-group" style="flex: 1;">
+                                    <label>Price ($)</label>
+                                    <input type="number" id="prodPrice" step="0.01" placeholder="29.99" required>
+                                </div>
+                                <div class="form-group" style="flex: 1;">
+                                    <label>Product ID / SKU (Optional)</label>
+                                    <input type="text" id="prodSku" placeholder="PRD-123">
+                                </div>
+                            </div>
                             <div class="form-group">
                                 <label>Product Image</label>
                                 <input type="file" id="prodImage" accept="image/*">
                                 <div id="prodImagePreview" class="image-preview-container"></div>
                             </div>
-                            <button type="submit" class="btn-premium w-100">
-                                <i data-lucide="wand-2"></i> Generate AI Listing
-                            </button>
+                            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                                <button type="button" class="btn-premium" id="btnValidateOnly"
+                                    style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2); flex: 0.6;">
+                                    <i data-lucide="shield-check"></i> Validate Terms
+                                </button>
+                                <button type="submit" class="btn-premium" style="flex: 1;">
+                                    <i data-lucide="wand-2"></i> Generate AI Listing
+                                </button>
+                            </div>
                         </form>
                     </div>
                     <div id="ai-output"
-                        style="flex: 1.2; border-left: 1px solid var(--glass-border); padding-left: 2rem; display: none;">
+                        style="flex: 1.2; border-left: 1px solid var(--glass-border); padding-left: 2rem; display: none; max-height: 80vh; overflow-y: auto;">
                         <div id="generateResult"></div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Validate View -->
-        <section id="validate-view" class="view-section">
-            <div class="glass-card">
-                <div style="display: flex; gap: 2rem;">
-                    <div style="flex: 1;">
-                        <h3>Listing Quality Check</h3>
-                        <p class="mb-4" style="color: var(--text-muted);">Validate your listing against SEO standards.
-                        </p>
-                        <form id="validateForm">
-                            <div class="form-group">
-                                <label>Listing Title</label>
-                                <input type="text" id="valTitle" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Listing Description</label>
-                                <textarea id="valDesc" rows="6" required></textarea>
-                            </div>
-                            <div class="form-group">
-                                <label>Main Image</label>
-                                <input type="file" id="valImage" required>
-                                <div id="valImagePreview" class="image-preview-container"></div>
-                            </div>
-                            <button type="submit" class="btn-premium">
-                                <i data-lucide="shield-check"></i> Run Validation
-                            </button>
-                        </form>
-                    </div>
-                    <div id="validation-output"
-                        style="flex: 1; border-left: 1px solid var(--glass-border); padding-left: 2rem; display: none;">
-                        <div id="validateResult"></div>
-                    </div>
-                </div>
-            </div>
-        </section>
 
         <!-- Intelligence View -->
         <section id="intelligence-view" class="view-section">
@@ -162,10 +156,81 @@
                         <p style="color: var(--text-muted);">Anomaly detection and sales optimization.</p>
                     </div>
                     <div style="display: flex; gap: 1rem; align-items: center;">
-                        <input type="text" id="prodId" placeholder="Product ID / SKU" style="width: 150px;">
+                        <input type="text" id="prodId" placeholder="Enter Product ID or SKU" style="width: 170px;">
                         <button class="btn-premium" id="btnCheckAnomalies">
                             <i data-lucide="search"></i> Analyze
                         </button>
+                    </div>
+                </div>
+
+                <!-- Format Configuration Section -->
+                <div
+                    style="background: rgba(99, 102, 241, 0.05); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; border: 1px solid rgba(99, 102, 241, 0.1);">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;">
+                        <div>
+                            <h5 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                                <i data-lucide="settings-2" style="width: 18px; color: var(--primary-color);"></i>
+                                CSV Format Manager
+                            </h5>
+                            <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">Define custom
+                                column headers for unsupported CSV formats.</p>
+                        </div>
+                        <button class="btn-premium" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;"
+                            onclick="toggleFormatForm()">
+                            <i data-lucide="plus"></i> Add Format
+                        </button>
+                    </div>
+
+                    <!-- Add Format Form (Single Raw Input) -->
+                    <div id="formatFormContainer"
+                        style="display: none; padding: 1.5rem; background: rgba(0,0,0,0.2); border-radius: 8px; margin-bottom: 1.5rem; border: 1px solid var(--glass-border); animation: fadeIn 0.3s ease;">
+                        <form id="customHeaderForm">
+                            <div class="form-group">
+                                <label style="font-size: 0.8rem;">Configuration Name (e.g. My-Store-Sales)</label>
+                                <input type="text" id="mapName" placeholder="Give this format a name" required
+                                    style="padding: 0.6rem;">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size: 0.8rem;">Paste CSV Header Row / Variable Headers</label>
+                                <textarea id="rawHeaderRow" rows="3"
+                                    placeholder="Paste the first row of your CSV here (e.g. Order ID, Product Name, Product ID / SKU, Total Sold, Transaction Date...)"
+                                    required
+                                    style="padding: 0.6rem; font-family: monospace; font-size: 0.85rem;"></textarea>
+                                <p style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.5rem;">
+                                    <i data-lucide="info" style="width: 12px; display: inline; margin-right: 4px;"></i>
+                                    The AI Intelligence Agent will automatically map these to internal data structures.
+                                </p>
+                            </div>
+
+                            <!-- Mapping Preview -->
+                            <div id="mappingPreview"
+                                style="display: none; margin-bottom: 1.5rem; padding: 1rem; border-radius: 8px; border: 1px solid rgba(99, 102, 241, 0.3); background: rgba(99, 102, 241, 0.05);">
+                                <h6
+                                    style="font-size: 0.75rem; color: #818cf8; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                                    AI Detected Mapping</h6>
+                                <div id="previewGrid"
+                                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; font-size: 0.8rem;">
+                                    <!-- Preview items injected here -->
+                                </div>
+                            </div>
+
+                            <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                                <button type="button" class="btn-premium btn-danger"
+                                    style="background: transparent; color: var(--text-muted); border: 1px solid var(--glass-border);"
+                                    onclick="toggleFormatForm()">Cancel</button>
+                                <button type="submit" class="btn-premium" style="padding: 0.5rem 1.5rem;"
+                                    id="btnSaveMapping" disabled>Save Configuration</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div id="mappingList" style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
+                        <!-- Mappings will be listed here -->
+                        <div
+                            style="font-size: 0.8rem; color: var(--text-muted); width: 100%; text-align: center; padding: 1rem;">
+                            No custom formats registered. Using standard heuristics.
+                        </div>
                     </div>
                 </div>
 
@@ -207,6 +272,27 @@
         // Initialize Lucide icons
         lucide.createIcons();
     </script>
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmation-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <i data-lucide="alert-triangle" style="color: var(--accent-warning); width: 24px; height: 24px;"></i>
+                <h4 id="modal-title">Confirm Action</h4>
+            </div>
+            <div class="modal-body" id="modal-body">
+                Are you sure you want to proceed?
+            </div>
+            <div class="modal-footer">
+                <button class="btn-premium" style="background: rgba(255,255,255,0.05); color: var(--text-main);"
+                    onclick="closeModal()">Cancel</button>
+                <button class="btn-premium btn-danger" id="modal-confirm-btn"
+                    style="background: var(--accent-danger);">Confirm</button>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>
